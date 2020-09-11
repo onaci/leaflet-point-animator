@@ -313,7 +313,7 @@
      * @param key {string} the keyframe time
      */
     setFrame(key) {
-      if (!this.isActive()) return; // set new if we have target
+      if (!this.isActive() || !this._keyframes) return; // set new if we have target
 
       this._frameKey = key;
       const nextFrame = this._keyframes[this._frameKey]; // inf invalid, clear the canvas without redraw

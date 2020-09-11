@@ -136,7 +136,7 @@ const PointAnimatorLayer = L.Layer.extend({
 	 * @param key {string} the keyframe time
 	 */
 	setFrame(key) {
-		if (!this.isActive()) return;
+		if (!this.isActive() || !this._keyframes) return;
 
 		// set new if we have target
 		this._frameKey = key;
