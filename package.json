@@ -1,7 +1,7 @@
 {
 	"name": "leaflet-point-animator",
-	"version": "0.0.0",
-	"description": "Animate many GeoJSON point features using an arbitrary time property",
+	"version": "0.0.1",
+	"description": "Animate GeoJSON point features using an arbitrary time property",
 	"main": "dist/leaflet-point-animator.js",
 	"license": "SEE LICENSE IN LICENCE",
 	"scripts": {

@@ -82,7 +82,7 @@ const PointAnimatorLayer = L.Layer.extend({
 		// clear entire canvas
 		ctx.clearRect(0, 0, info.canvas.width, info.canvas.height);
 		
-		if (!this._frameKey) return false;
+		if (!this._frameKey || !this._keyframes) return false;
 
 		// get features for keyframe
 		const frameFeatures = this._keyframes[this._frameKey];
