@@ -157,14 +157,47 @@
       WorkerClass = WorkerThreads.Worker;
   } catch(e) {} // eslint-disable-line
 
-  function createURLWorkerFactory(url) {
+  function decodeBase64(base64, enableUnicode) {
+      return Buffer.from(base64, 'base64').toString(enableUnicode ? 'utf16' : 'utf8');
+  }
+
+  function createBase64WorkerFactory(base64, sourcemapArg, enableUnicodeArg) {
+      var sourcemap = sourcemapArg === undefined ? null : sourcemapArg;
+      var enableUnicode = enableUnicodeArg === undefined ? false : enableUnicodeArg;
+      var source = decodeBase64(base64, enableUnicode);
+      var start = source.indexOf('\n', 10) + 1;
+      var body = source.substring(start) + (sourcemap ? '\/\/# sourceMappingURL=' + sourcemap : '');
       return function WorkerFactory(options) {
-          return new WorkerClass(url, options);
+          return new WorkerClass(body, Object.assign({}, options, { eval: true }));
       };
   }
 
-  function createURLWorkerFactory$1(url) {
+  function decodeBase64$1(base64, enableUnicode) {
+      var binaryString = atob(base64);
+      if (enableUnicode) {
+          var binaryView = new Uint8Array(binaryString.length);
+          for (var i = 0, n = binaryString.length; i < n; ++i) {
+              binaryView[i] = binaryString.charCodeAt(i);
+          }
+          return String.fromCharCode.apply(null, new Uint16Array(binaryView.buffer));
+      }
+      return binaryString;
+  }
+
+  function createURL(base64, sourcemapArg, enableUnicodeArg) {
+      var sourcemap = sourcemapArg === undefined ? null : sourcemapArg;
+      var enableUnicode = enableUnicodeArg === undefined ? false : enableUnicodeArg;
+      var source = decodeBase64$1(base64, enableUnicode);
+      var start = source.indexOf('\n', 10) + 1;
+      var body = source.substring(start) + (sourcemap ? '\/\/# sourceMappingURL=' + sourcemap : '');
+      var blob = new Blob([body], { type: 'application/javascript' });
+      return URL.createObjectURL(blob);
+  }
+
+  function createBase64WorkerFactory$1(base64, sourcemapArg, enableUnicodeArg) {
+      var url;
       return function WorkerFactory(options) {
+          url = url || createURL(base64, sourcemapArg, enableUnicodeArg);
           return new Worker(url, options);
       };
   }
@@ -175,14 +208,17 @@
       return kIsNodeJS;
   }
 
-  function createURLWorkerFactory$2(url) {
+  function createBase64WorkerFactory$2(base64, sourcemapArg, enableUnicodeArg) {
       if (isNodeJS()) {
-          return createURLWorkerFactory(url);
+          return createBase64WorkerFactory(base64, sourcemapArg, enableUnicodeArg);
       }
-      return createURLWorkerFactory$1(url);
+      return createBase64WorkerFactory$1(base64, sourcemapArg, enableUnicodeArg);
   }
 
-  var WorkerFactory = createURLWorkerFactory$2('/dist/web-worker-0.js');
+  var WorkerFactory = createBase64WorkerFactory$2('Lyogcm9sbHVwLXBsdWdpbi13ZWItd29ya2VyLWxvYWRlciAqLwovKioKICogVHJhbmZvcm0gYW4gYXJyYXkgb2YgcG9pbnRzIGludG8gYW4gCiAqIG9iamVjdCBvZiBrZXlmcmFtZXMgZ3JvdXBlZCBieSB1bmlxIHRpbWVzCiAqLwoKb25tZXNzYWdlID0gZnVuY3Rpb24gKGUpIHsKICBjb25zdCB0aW1lS2V5ID0gZS5kYXRhLnRpbWVLZXk7CiAgY29uc3QgZmVhdHVyZXMgPSBlLmRhdGEuZmVhdHVyZXM7IC8vIGdldCBzb3J0ZWQgbGlzdCBvZiBkYXRlcwoKICBjb25zdCBkYXRlcyA9IGZlYXR1cmVzLm1hcChmID0+IG5ldyBEYXRlKGYucHJvcGVydGllc1t0aW1lS2V5XSkpLnNvcnQoKGEsIGIpID0+IGEgLSBiKTsgLy8gdW5pcSBsaXN0IG9mIElTTyBzdHJpbmdzCgogIHRpbWVzID0gWy4uLm5ldyBTZXQoZGF0ZXMubWFwKGQgPT4gZC50b0lTT1N0cmluZygpKSldOwogIGNvbnN0IGtleWZyYW1lcyA9IHt9OwogIHRpbWVzLmZvckVhY2godGltZSA9PiB7CiAgICBjb25zdCBzbGljZWRGZWF0dXJlcyA9IGZlYXR1cmVzLmZpbHRlcihmID0+IGYucHJvcGVydGllc1t0aW1lS2V5XSA9PT0gdGltZSk7CiAgICBrZXlmcmFtZXNbdGltZV0gPSBzbGljZWRGZWF0dXJlczsKICB9KTsKICBwb3N0TWVzc2FnZSh7CiAgICBrZXlmcmFtZXMKICB9KTsKfTsKCg==', 'data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoidHJhbnNmb3JtV29ya2VyLmpzIiwic291cmNlcyI6WyJ3b3JrZXI6Ly93ZWItd29ya2VyL3RyYW5zZm9ybVdvcmtlci5qcyJdLCJzb3VyY2VzQ29udGVudCI6WyJcbi8qKlxuICogVHJhbmZvcm0gYW4gYXJyYXkgb2YgcG9pbnRzIGludG8gYW4gXG4gKiBvYmplY3Qgb2Yga2V5ZnJhbWVzIGdyb3VwZWQgYnkgdW5pcSB0aW1lc1xuICovXG5cbmxldCBydW5uaW5nID0gMDtcbmxldCBrZXlmcmFtZUFycmF5ID0gW107XG5cbm9ubWVzc2FnZSA9IGZ1bmN0aW9uKGUpIHtcblxuICBjb25zdCB0aW1lS2V5ID0gZS5kYXRhLnRpbWVLZXk7XG4gIGNvbnN0IGZlYXR1cmVzID0gZS5kYXRhLmZlYXR1cmVzO1xuXG4gIC8vIGdldCBzb3J0ZWQgbGlzdCBvZiBkYXRlc1xuICBjb25zdCBkYXRlcyA9IGZlYXR1cmVzLm1hcChmID0+IG5ldyBEYXRlKGYucHJvcGVydGllc1t0aW1lS2V5XSkpLnNvcnQoKGEsYikgPT4gYSAtIGIgKTtcblx0XHRcbiAgLy8gdW5pcSBsaXN0IG9mIElTTyBzdHJpbmdzXG4gIHRpbWVzID0gWy4uLm5ldyBTZXQoZGF0ZXMubWFwKGQgPT4gZC50b0lTT1N0cmluZygpKSldOyBcblxuICBjb25zdCBrZXlmcmFtZXMgPSB7fTtcbiAgdGltZXMuZm9yRWFjaCh0aW1lID0+IHtcbiAgICBjb25zdCBzbGljZWRGZWF0dXJlcyA9IGZlYXR1cmVzLmZpbHRlcihmID0+IGYucHJvcGVydGllc1t0aW1lS2V5XSA9PT0gdGltZSk7XG4gICAga2V5ZnJhbWVzW3RpbWVdID0gc2xpY2VkRmVhdHVyZXM7XG4gIH0pO1xuICBcbiAgcG9zdE1lc3NhZ2UoeyBrZXlmcmFtZXMgfSk7XG59XG5cbiJdLCJuYW1lcyI6WyJvbm1lc3NhZ2UiLCJlIiwidGltZUtleSIsImRhdGEiLCJmZWF0dXJlcyIsImRhdGVzIiwibWFwIiwiZiIsIkRhdGUiLCJwcm9wZXJ0aWVzIiwic29ydCIsImEiLCJiIiwidGltZXMiLCJTZXQiLCJkIiwidG9JU09TdHJpbmciLCJrZXlmcmFtZXMiLCJmb3JFYWNoIiwidGltZSIsInNsaWNlZEZlYXR1cmVzIiwiZmlsdGVyIiwicG9zdE1lc3NhZ2UiXSwibWFwcGluZ3MiOiJBQUNBOzs7OztBQVFBQSxTQUFTLEdBQUcsVUFBU0MsQ0FBVCxFQUFZO0FBRXRCLFFBQU1DLE9BQU8sR0FBR0QsQ0FBQyxDQUFDRSxJQUFGLENBQU9ELE9BQXZCO0FBQ0EsUUFBTUUsUUFBUSxHQUFHSCxDQUFDLENBQUNFLElBQUYsQ0FBT0MsUUFBeEIsQ0FIc0I7O0FBTXRCLFFBQU1DLEtBQUssR0FBR0QsUUFBUSxDQUFDRSxHQUFULENBQWFDLENBQUMsSUFBSSxJQUFJQyxJQUFKLENBQVNELENBQUMsQ0FBQ0UsVUFBRixDQUFhUCxPQUFiLENBQVQsQ0FBbEIsRUFBbURRLElBQW5ELENBQXdELENBQUNDLENBQUQsRUFBR0MsQ0FBSCxLQUFTRCxDQUFDLEdBQUdDLENBQXJFLENBQWQsQ0FOc0I7O0FBU3RCQyxFQUFBQSxLQUFLLEdBQUcsQ0FBQyxHQUFHLElBQUlDLEdBQUosQ0FBUVQsS0FBSyxDQUFDQyxHQUFOLENBQVVTLENBQUMsSUFBSUEsQ0FBQyxDQUFDQyxXQUFGLEVBQWYsQ0FBUixDQUFKLENBQVI7QUFFQSxRQUFNQyxTQUFTLEdBQUcsRUFBbEI7QUFDQUosRUFBQUEsS0FBSyxDQUFDSyxPQUFOLENBQWNDLElBQUksSUFBSTtBQUNwQixVQUFNQyxjQUFjLEdBQUdoQixRQUFRLENBQUNpQixNQUFULENBQWdCZCxDQUFDLElBQUlBLENBQUMsQ0FBQ0UsVUFBRixDQUFhUCxPQUFiLE1BQTBCaUIsSUFBL0MsQ0FBdkI7QUFDQUYsSUFBQUEsU0FBUyxDQUFDRSxJQUFELENBQVQsR0FBa0JDLGNBQWxCO0FBQ0QsR0FIRDtBQUtBRSxFQUFBQSxXQUFXLENBQUM7QUFBRUwsSUFBQUE7QUFBRixHQUFELENBQVg7QUFDRCxDQWxCRCJ9', false);
+  /* eslint-enable */
+
+  var WorkerFactory$1 = createBase64WorkerFactory$2('Lyogcm9sbHVwLXBsdWdpbi13ZWItd29ya2VyLWxvYWRlciAqLwpvbm1lc3NhZ2UgPSBmdW5jdGlvbiAoZSkgewogIGNvbnN0IGtleWZyYW1lQXJyYXkgPSBlLmRhdGEua2V5ZnJhbWVBcnJheTsKICBjb25zdCBrZXlmcmFtZXMgPSB7fTsKICBrZXlmcmFtZUFycmF5LmZvckVhY2goayA9PiB7CiAgICBjb25zdCB0aW1lcyA9IE9iamVjdC5rZXlzKGspOwogICAgdGltZXMuZm9yRWFjaCh0aW1lID0+IHsKICAgICAgaWYgKCFrZXlmcmFtZXNbdGltZV0pIHsKICAgICAgICBrZXlmcmFtZXNbdGltZV0gPSBrW3RpbWVdOwogICAgICB9IGVsc2UgewogICAgICAgIGtleWZyYW1lc1t0aW1lXSA9IGtleWZyYW1lc1t0aW1lXS5jb25jYXQoa1t0aW1lXSk7CiAgICAgIH0KICAgIH0pOwogIH0pOwogIHBvc3RNZXNzYWdlKHsKICAgIGtleWZyYW1lcwogIH0pOwp9OwoK', 'data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoibWVyZ2VXb3JrZXIuanMiLCJzb3VyY2VzIjpbIndvcmtlcjovL3dlYi13b3JrZXIvbWVyZ2VXb3JrZXIuanMiXSwic291cmNlc0NvbnRlbnQiOlsiXG5vbm1lc3NhZ2UgPSBmdW5jdGlvbihlKSB7XG4gIGNvbnN0IGtleWZyYW1lQXJyYXkgPSBlLmRhdGEua2V5ZnJhbWVBcnJheTtcbiAgY29uc3Qga2V5ZnJhbWVzID0ge307XG4gIGtleWZyYW1lQXJyYXkuZm9yRWFjaChrID0+IHtcbiAgICBjb25zdCB0aW1lcyA9IE9iamVjdC5rZXlzKGspO1xuICAgIHRpbWVzLmZvckVhY2godGltZSA9PiB7XG4gICAgICBpZigha2V5ZnJhbWVzW3RpbWVdKSB7XG4gICAgICAgIGtleWZyYW1lc1t0aW1lXSA9IGtbdGltZV07XG4gICAgICB9IGVsc2Uge1xuICAgICAgICBrZXlmcmFtZXNbdGltZV0gPSBrZXlmcmFtZXNbdGltZV0uY29uY2F0KGtbdGltZV0pO1xuICAgICAgfVxuICAgIH0pXG4gIH0pO1xuXG4gIHBvc3RNZXNzYWdlKHsga2V5ZnJhbWVzIH0pO1xufVxuXG4iXSwibmFtZXMiOlsib25tZXNzYWdlIiwiZSIsImtleWZyYW1lQXJyYXkiLCJkYXRhIiwia2V5ZnJhbWVzIiwiZm9yRWFjaCIsImsiLCJ0aW1lcyIsIk9iamVjdCIsImtleXMiLCJ0aW1lIiwiY29uY2F0IiwicG9zdE1lc3NhZ2UiXSwibWFwcGluZ3MiOiJBQUNBQSxTQUFTLEdBQUcsVUFBU0MsQ0FBVCxFQUFZO0FBQ3RCLFFBQU1DLGFBQWEsR0FBR0QsQ0FBQyxDQUFDRSxJQUFGLENBQU9ELGFBQTdCO0FBQ0EsUUFBTUUsU0FBUyxHQUFHLEVBQWxCO0FBQ0FGLEVBQUFBLGFBQWEsQ0FBQ0csT0FBZCxDQUFzQkMsQ0FBQyxJQUFJO0FBQ3pCLFVBQU1DLEtBQUssR0FBR0MsTUFBTSxDQUFDQyxJQUFQLENBQVlILENBQVosQ0FBZDtBQUNBQyxJQUFBQSxLQUFLLENBQUNGLE9BQU4sQ0FBY0ssSUFBSSxJQUFJO0FBQ3BCLFVBQUcsQ0FBQ04sU0FBUyxDQUFDTSxJQUFELENBQWIsRUFBcUI7QUFDbkJOLFFBQUFBLFNBQVMsQ0FBQ00sSUFBRCxDQUFULEdBQWtCSixDQUFDLENBQUNJLElBQUQsQ0FBbkI7QUFDRCxPQUZELE1BRU87QUFDTE4sUUFBQUEsU0FBUyxDQUFDTSxJQUFELENBQVQsR0FBa0JOLFNBQVMsQ0FBQ00sSUFBRCxDQUFULENBQWdCQyxNQUFoQixDQUF1QkwsQ0FBQyxDQUFDSSxJQUFELENBQXhCLENBQWxCO0FBQ0Q7QUFDRixLQU5EO0FBT0QsR0FURDtBQVdBRSxFQUFBQSxXQUFXLENBQUM7QUFBRVIsSUFBQUE7QUFBRixHQUFELENBQVg7QUFDRCxDQWZEIn0=', false);
   /* eslint-enable */
 
   const PointAnimatorLayer = L.Layer.extend({
@@ -350,24 +386,44 @@
      * Kick off worker job/s to compute keyframes from features.
      */
     _computeKeyframes() {
-      const numWorkers = this.options.numWorkers || window.navigator.hardwareConcurrency;
-      const worker = new WorkerFactory();
-      worker.postMessage({
-        job: 'MAIN',
-        features: this.options.features,
-        timeKey: this._timeKey,
-        numWorkers
-      });
+      const numWorkers = this.options.numWorkers || window.navigator.hardwareConcurrency; // split features into chunks for worker
 
-      worker.onmessage = e => {
-        this._keyframes = e.data.keyframes;
-        console.log('this._keyframes', this._keyframes);
-        this._times = Object.keys(this._keyframes);
+      const featureChunks = this._chunkArray(this.options.features, numWorkers);
 
-        if (this.options.onKeyframesReady) {
-          this.options.onKeyframesReady();
+      let running = 0;
+      const keyframeArray = [];
+
+      const workerDone = e => {
+        running -= 1;
+        keyframeArray.push(e.data.keyframes);
+
+        if (running < 1) {
+          const mWorker = new WorkerFactory$1();
+          mWorker.postMessage({
+            keyframeArray
+          });
+
+          mWorker.onmessage = e => {
+            this._keyframes = e.data.keyframes;
+            console.log('this._keyframes', this._keyframes);
+            this._times = Object.keys(this._keyframes);
+
+            if (this.options.onKeyframesReady) {
+              this.options.onKeyframesReady();
+            }
+          };
         }
       };
+
+      for (let i = 0; i < numWorkers; i += 1) {
+        running += 1;
+        const tWorker = new WorkerFactory();
+        tWorker.onmessage = workerDone;
+        tWorker.postMessage({
+          features: featureChunks[i],
+          timeKey: this._timeKey
+        });
+      }
     },
 
     /**
@@ -390,6 +446,21 @@
       }
 
       this._pane = pane;
+    },
+
+    /**
+     * Divide an array into n chunks
+     * @param {array} array 
+     * @param {number} parts 
+     */
+    _chunkArray(array, parts) {
+      let result = [];
+
+      for (let i = parts; i > 0; i--) {
+        result.push(array.splice(0, Math.ceil(array.length / i)));
+      }
+
+      return result;
     }
 
   });

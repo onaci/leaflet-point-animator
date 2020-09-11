@@ -1,5 +1,6 @@
 import './L.CanvasLayer';
-import keyframeWorker from 'web-worker:./keyframeWorker';
+import transformWorker from 'web-worker:./transformWorker';
+import mergeWorker from 'web-worker:./mergeWorker';
 
 const PointAnimatorLayer = L.Layer.extend({
 
@@ -175,18 +176,42 @@ const PointAnimatorLayer = L.Layer.extend({
 	_computeKeyframes() {
 
 		const numWorkers = this.options.numWorkers || window.navigator.hardwareConcurrency;
-		const worker = new keyframeWorker();
+		
+		// split features into chunks for worker
+		const featureChunks = this._chunkArray(this.options.features, numWorkers);
+		
+		let running = 0;
+		const keyframeArray = [];
 
-		worker.postMessage({ job: 'MAIN', features: this.options.features, timeKey: this._timeKey, numWorkers });
-		worker.onmessage = (e) => {
-			this._keyframes = e.data.keyframes;
-			console.log('this._keyframes', this._keyframes);
-			
-			this._times = Object.keys(this._keyframes);
-			if (this.options.onKeyframesReady) {
-				this.options.onKeyframesReady();
+		const workerDone = (e) => {
+			running -= 1;
+			keyframeArray.push(e.data.keyframes);
+			if(running < 1) {
+				const mWorker = new mergeWorker();
+				mWorker.postMessage({ keyframeArray });
+				mWorker.onmessage = (e) => {
+						this._keyframes = e.data.keyframes;
+						console.log('this._keyframes', this._keyframes);
+					
+						this._times = Object.keys(this._keyframes);
+						if (this.options.onKeyframesReady) {
+							this.options.onKeyframesReady();
+						}
+					}	
+							
 			}
-		}	
+		}
+
+    for(let i = 0; i < numWorkers; i += 1) {
+      running += 1;
+      const tWorker = new transformWorker();
+      tWorker.onmessage = workerDone;
+      tWorker.postMessage({ features: featureChunks[i], timeKey: this._timeKey });
+		}
+		
+		
+		
+		
 	},
 
 	/**
@@ -209,6 +234,19 @@ const PointAnimatorLayer = L.Layer.extend({
 
 		this._pane = pane;
 	},
+
+	/**
+	 * Divide an array into n chunks
+	 * @param {array} array 
+	 * @param {number} parts 
+	 */
+	_chunkArray(array, parts) {
+		let result = [];
+		for (let i = parts; i > 0; i--) {
+				result.push(array.splice(0, Math.ceil(array.length / i)));
+		}
+		return result;
+	}
 
 });
 

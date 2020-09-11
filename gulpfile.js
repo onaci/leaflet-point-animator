@@ -21,7 +21,7 @@ gulp.task('scripts', function () {
 				include:
 					'node_modules/**'
 			}),
-			webWorkerLoader({ inline: false, loadPath: '/dist' })
+			webWorkerLoader()
 		]
 	})
 
