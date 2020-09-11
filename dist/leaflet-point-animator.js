@@ -230,8 +230,7 @@
 
       this._canvasLayer.addTo(map);
 
-      this._canvas = this._canvasLayer._canvas; // this._context = this._canvas.getContext("2d");
-      // callback
+      this._canvas = this._canvasLayer._canvas; // callback
 
       if (this.options.onAdd) this.options.onAdd();
     },
@@ -263,7 +262,7 @@
       var ctx = info.canvas.getContext('2d'); // clear entire canvas
 
       ctx.clearRect(0, 0, info.canvas.width, info.canvas.height);
-      if (!this._frameKey) return false; // get features for keyframe
+      if (!this._frameKey || !this._keyframes) return false; // get features for keyframe
 
       const frameFeatures = this._keyframes[this._frameKey];
       let radius = 5; // draw each point on canvas
@@ -351,11 +350,7 @@
      * Kick off worker job/s to compute keyframes from features.
      */
     _computeKeyframes() {
-      const numWorkers = this.options.numWorkers || window.navigator.hardwareConcurrency; // TODO - will this	be portable??
-      // let url = new URL("dist/L.KeyframeWorker.js", window.location.origin);
-      // var worker = new Worker('/dist/L.KeyframeWorker.js');
-      // var worker = new Worker(url);
-
+      const numWorkers = this.options.numWorkers || window.navigator.hardwareConcurrency;
       const worker = new WorkerFactory();
       worker.postMessage({
         job: 'MAIN',
