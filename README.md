@@ -1,6 +1,6 @@
 # leaflet-point-animator [![NPM version][npm-image]][npm-url] [![NPM Downloads][npm-downloads-image]][npm-url]
 
-**ALPHA** plugin to animate large number of GeoJSON points.
+Leaflet plugin to animate large number of GeoJSON points.
 
 e.g. scrubbing through 60MB of GeoJSON:
 ![Screenshot](/screenshots/keyframes.gif?raw=true)
