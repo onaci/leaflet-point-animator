@@ -1,0 +1,52 @@
+<!doctype html>
+<html>
+
+<head>
+	<title>Leaflet Point Animator</title>
+	<meta charset="utf-8">
+</head>
+
+<body>
+
+	<div id="map"></div>
+	<div id="time"></div>
+
+	<div id="controls">
+
+		<h2>Leaflet Point Animator</h2>
+		<button id="load-btn">Load 60Mb of GeoJSON</button>
+		<div id="loading">
+			<p>Loading 60MB of GeoJSON data.. (375k point features across 122 keyframes)</p>
+			<div class="lds-roller"><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>
+		</div>
+		<div class="slidecontainer">
+			<p>Keyframes:</p>
+			<input type="range" min="0" max="99" value="0" step="2" class="slider" id="keyFrameSlider">
+		</div>
+
+	</div>
+
+	<!--leaflet-->
+	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+	<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+
+	<!--the plugin-->
+	<script src="../dist/leaflet-point-animator.js"></script>
+
+	<!--demo stuff-->
+	<script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+	<script src="https://underscorejs.org/underscore-min.js"></script>
+	<script src="https://unpkg.com/chroma-js@2.0.3/chroma.min.js"></script>
+	
+	<!-- <script src="/data/376-keyframes.js"></script> -->
+	<!-- <script src="/data/keyframes.js"></script> -->
+	<!-- <script src="/data/demo-lg.js"></script> -->
+	<!-- <script src="/data/lg.js"></script> -->
+	<!-- <script src="data.js" charset="utf-8"></script> -->
+	<link rel="stylesheet" href="demo.css" />
+	<script src="demo.js"></script>
+	
+
+</body>
+
+</html>
