@@ -275,7 +275,6 @@
      * Remove the pane from DOM, and void pane when layer removed from map
      */
     onRemove() {
-      console.log('onRemove', this.options);
       this._active = false;
 
       this._map.removeLayer(this._canvasLayer);
@@ -334,6 +333,15 @@
      */
     isActive() {
       return this._active;
+    },
+
+    /**
+     * Get the current frame key
+     * @returns {string} the keyframe time
+     */
+    getFrame() {
+      if (!this.isActive()) return -1;
+      return this._frameKey;
     },
 
     /**
