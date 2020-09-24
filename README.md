@@ -2,10 +2,10 @@
 
 **ALPHA** plugin to animate large number of GeoJSON points.
 
-
 e.g. scrubbing through 60MB of GeoJSON:
 ![Screenshot](/screenshots/keyframes.gif?raw=true)
 
+If you don't have a lot of points, and require more flexibility + interactivity you should check out: [leaflet-temporal-geojson](https://github.com/onaci/leaflet-temporal-geojson) instead.
 
 ## install
 ```shell
